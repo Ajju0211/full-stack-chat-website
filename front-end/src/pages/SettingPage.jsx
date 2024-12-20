@@ -1,4 +1,5 @@
-import { THEMES } from "../constants";
+import { useEffect } from "react";
+import { THEMES } from "../constants/index.js";
 import { useThemeStore } from "../store/useThemeStore";
 import { Send } from "lucide-react";
 
@@ -9,6 +10,11 @@ const PREVIEW_MESSAGES = [
 
 const SettingsPage = () => {
   const { theme, setTheme } = useThemeStore();
+
+  // Sync the theme with the data-theme attribute
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]); // Runs whenever `theme` changes
 
   return (
     <div className="h-screen container mx-auto px-4 pt-20 max-w-5xl">
@@ -113,4 +119,5 @@ const SettingsPage = () => {
     </div>
   );
 };
+
 export default SettingsPage;
