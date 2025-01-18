@@ -5,10 +5,8 @@ import express from "express";
 const app = express();
 const server = http.createServer(app);
 
-const io = new Server(server, {
-  cors: {
-    origin: ["http://localhost:5173"],
-  },
+const io = new Server(server,{
+  cors: true,
 });
 
 export function getReceiverSocketId(userId) {
@@ -17,15 +15,32 @@ export function getReceiverSocketId(userId) {
 
 // used to store online users
 const userSocketMap = {}; // {userId: socketId}
+const users = {};
 
 io.on("connection", (socket) => {
   console.log("A user connected", socket.id);
 
   const userId = socket.handshake.query.userId;
-  if (userId) userSocketMap[userId] = socket.id;
+  if (userId)  userSocketMap[userId] = socket.id;
 
-  // io.emit() is used to send events to all the connected clients
+  const peerId = socket.handshake.query.peerId;
+
+
+  if (peerId) users[userId] = peerId ;
+
+
+  // Sending the list of online users
+
   io.emit("getOnlineUsers", Object.keys(userSocketMap));
+  
+  // Sending the list of peer ids
+  io.emit('getPeerIds', users);
+  
+  console.log("Peers:", Object.values(users));
+
+  socket.on('register', (peerId) => {
+    users[socket.id] = { peerId };
+  });
 
   socket.on("disconnect", () => {
     console.log("A user disconnected", socket.id);

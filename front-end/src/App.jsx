@@ -11,6 +11,7 @@ import { useAuthStore } from './store/useAuthStore.js'
 import { useEffect } from 'react'
 import { Toaster } from "react-hot-toast"
 
+
 const App = () => {
   const { authUser, checkAuth, isCheckingAuth } = useAuthStore()
 
@@ -37,8 +38,7 @@ const App = () => {
       </Routes>
       <Toaster />
     </div>
-     
-      
+
   )
 }
 

@@ -2,8 +2,12 @@ import { create } from "zustand";
 import { axiosInstance } from "../lib/axios.js";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
+import Peer from "peerjs";
+import { useVideoStore } from "./useVideoStore.js";
+import { useChatStore } from "./useChatStore.js";
 
-const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5001" : "/";
+const BASE_URL =
+  import.meta.env.MODE === "development" ? "http://localhost:5001" : "/";
 
 export const useAuthStore = create((set, get) => ({
   authUser: null,
@@ -13,6 +17,11 @@ export const useAuthStore = create((set, get) => ({
   isCheckingAuth: true,
   onlineUsers: [],
   socket: null,
+  peer: null,
+  peerId: null,
+  peerList: [],
+  IncomingCall: null,
+  callerId: null,
 
   checkAuth: async () => {
     try {
@@ -84,22 +93,56 @@ export const useAuthStore = create((set, get) => ({
 
   connectSocket: () => {
     const { authUser } = get();
+    const  setRemoteStream  = useVideoStore.getState().setRemoteStream;
+    const setuserCalling = useChatStore.getState().setuserCalling;
     if (!authUser || get().socket?.connected) return;
+    const newPeer = new Peer();
+    set({ peer: newPeer });
 
-    const socket = io(BASE_URL, {
-      query: {
-        userId: authUser._id,
-      },
-    });
-    socket.connect();
+    
+    newPeer.on("open", (id) => {
+      set({ peerId: id });
+      const { peerId } = get();
+      const socket = io(BASE_URL, {
+        query: {
+          userId: authUser._id,
+          peerId: peerId,
+        },
+      });
+      socket.connect();
+      set({ socket: socket });
 
-    set({ socket: socket });
+      socket.on('getOnlineUsers', (userIds) => {
+        set({ onlineUsers: userIds });
+      });
 
-    socket.on("getOnlineUsers", (userIds) => {
-      set({ onlineUsers: userIds });
+      socket.on('getPeerIds', (users) => {
+        set({ peerList: users });
+      })
+      //If user calls another user It will send Notification
+      newPeer.on("call", (call) => {
+        set({ ReceivingCall: true });
+        set({ IncomingCall: call }); // Store the incoming call
+       
+
+        call.on("stream", (stream) => {
+          setRemoteStream(stream);
+        });0
+
+        call.on("close", () => {
+          setuserCalling(false);
+          alert("Call ended");
+        });
+      });
     });
   },
   disconnectSocket: () => {
     if (get().socket?.connected) get().socket.disconnect();
   },
+  setRecevingCall: (value) => {
+    set({ ReceivingCall: value });
+  },
+  setIncomingCall: (call) => {
+    set({ incomingCall: call });
+  }
 }));

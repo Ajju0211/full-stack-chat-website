@@ -11,7 +11,7 @@ import { connectDB } from './libs/db.js';
 
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
-import { io, app, server } from "./libs/socket.js";
+import { app, server } from "./libs/socket.js";
 
 dotenv.config();
 
